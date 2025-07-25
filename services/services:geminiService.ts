@@ -1,16 +1,26 @@
+
 import { GoogleGenAI, GenerateContentResponse } from '@google/genai';
 import { type ScoreResult, type UserData, type Language, LeadershipStyleName } from '../types';
 
-if (!process.env.API_KEY) {
-    console.error("API_KEY environment variable not set. Using a placeholder key.");
-    // This allows the app to run in environments where the key isn't set,
-    // though API calls will fail. The UI handles this gracefully.
-    process.env.API_KEY = "YOUR_API_KEY_HERE";
+// This function safely gets the API key, preventing a 'process is not defined' error in the browser.
+function getApiKey(): string {
+    // In a browser environment, 'process' is not defined. This code checks for its existence.
+    // If it exists (e.g., in a Node.js build environment), it uses the API_KEY.
+    // Otherwise, it falls back to a placeholder.
+    // NOTE: On Vercel without a build step, client-side code cannot access environment variables directly.
+    // This will cause the app to use the placeholder key. The white screen will be fixed, but AI calls will show example data.
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY && process.env.API_KEY !== 'YOUR_API_KEY_HERE') {
+        return process.env.API_KEY;
+    }
+    
+    // Fallback for browser environments or when the key is not set.
+    return "YOUR_API_KEY_HERE";
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKey = getApiKey();
+const ai = new GoogleGenAI({ apiKey: apiKey });
 
-const isUsingPlaceholderKey = () => process.env.API_KEY === "YOUR_API_KEY_HERE";
+const isUsingPlaceholderKey = () => apiKey === "YOUR_API_KEY_HERE";
 
 export const getLeadershipAnalysis = async (
     scores: ScoreResult[],
