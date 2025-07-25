@@ -3,12 +3,27 @@ import { GoogleGenAI, GenerateContentResponse } from '@google/genai';
 import { type ScoreResult, type UserData, type Language, LeadershipStyleName } from '../types';
 
 // IMPORTANT FIX for blank screen issue on Vercel.
-// Calling `process.env` in client-side code can cause a fatal error ("process is not defined")
-// in deployment environments like Vercel, leading to a white screen.
-// By setting a placeholder key directly, we ensure the app's Javascript can load without crashing.
-// The AI features will show example data until a secure method for key management is implemented.
+// By implementing LAZY INITIALIZATION, we prevent the GoogleGenAI constructor
+// from running on initial app load, which was causing a fatal crash.
+// The instance will only be created the first time an AI function is called.
+
 const apiKey = "AIzaSy_PLACEHOLDER_FOR_APP_LOAD";
-const ai = new GoogleGenAI({ apiKey });
+
+let ai: GoogleGenAI | null = null;
+
+/**
+ * Gets the singleton instance of the GoogleGenAI client.
+ * Initializes it on the first call.
+ * @returns The initialized GoogleGenAI client.
+ */
+const getAiInstance = (): GoogleGenAI => {
+    if (!ai) {
+        // This code now only runs when an AI function is called for the first time,
+        // moving it out of the critical app startup path.
+        ai = new GoogleGenAI({ apiKey });
+    }
+    return ai;
+};
 
 const isUsingPlaceholderKey = () => apiKey === "AIzaSy_PLACEHOLDER_FOR_APP_LOAD";
 
@@ -59,9 +74,10 @@ export const getLeadershipAnalysis = async (
     2.  Un título en negrita: **5 Puntos de Mejora para tu Liderazgo**. Debajo, una lista numerada de 5 puntos de mejora específicos y accionables, adaptados a sus estilos de mayor y menor puntuación.
     3.  Un título en negrita: **Recomendaciones para tu Desarrollo Personal**. Debajo, recomienda 3 recursos específicos (un artículo, un video y un ejercicio) que se alineen con la filosofía del Método PENIEL. Enmarca estas como sugerencias exclusivas del Método PENIEL. No incluyas enlaces externos. Las recomendaciones deben ser conceptos o tipos de actividades. Por ejemplo: 'Lee un artículo sobre comunicación empática de la biblioteca del Método PENIEL', 'Mira un video del Método PENIEL sobre cómo delegar tareas eficazmente', 'Practica el ejercicio de "Escucha Activa" de un taller del Método PENIEL'.
     `;
-
+    
+    const currentAi = getAiInstance();
     try {
-        const response = await ai.models.generateContent({
+        const response = await currentAi.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
         });
@@ -90,8 +106,9 @@ export const getImprovedText = async (originalText: string, targetLanguage: Lang
     ${originalText}
     ---
     `;
+    const currentAi = getAiInstance();
     try {
-        const response = await ai.models.generateContent({
+        const response = await currentAi.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
         });
@@ -131,9 +148,10 @@ export const getLeadershipAdvice = async (situation: string, style: LeadershipSt
     4. Usa un tono profesional, constructivo y de apoyo.
     5. Formatea la respuesta en español, usando negritas para los títulos como "**Análisis de la Situación**" y "**Posibles Soluciones**", y una lista numerada para las soluciones. No agregues saludos ni despedidas.
     `;
-
+    
+    const currentAi = getAiInstance();
     try {
-        const response = await ai.models.generateContent({
+        const response = await currentAi.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
         });
@@ -166,9 +184,10 @@ export const getMotivationalPhrases = async (keyword: string, style: LeadershipS
     **Palabra Clave:** ${keyword.replace('#', '')}
     **Estilo de Liderazgo:** ${style}
     `;
-
+    
+    const currentAi = getAiInstance();
      try {
-        const response = await ai.models.generateContent({
+        const response = await currentAi.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
         });
@@ -180,7 +199,7 @@ export const getMotivationalPhrases = async (keyword: string, style: LeadershipS
 };
 
 export const generateFlyerImage = async (prompt: string): Promise<string> => {
-     if (isUsingPlaceholderKey()) {
+    if (isUsingPlaceholderKey()) {
         const canvas = document.createElement('canvas');
         canvas.width = 600;
         canvas.height = 800;
@@ -200,8 +219,10 @@ export const generateFlyerImage = async (prompt: string): Promise<string> => {
 
     const fullPrompt = `Generate a background image for a flyer. The style must be modern, minimalist, and use abstract graphic elements. The theme is: "${prompt}". The image should be suitable to have text overlaid on top of it, so it should not be too busy or contain any text itself.`;
 
+    const currentAi = getAiInstance();
+    let response;
     try {
-        const response = await ai.models.generateImages({
+        response = await currentAi.models.generateImages({
             model: 'imagen-3.0-generate-002',
             prompt: fullPrompt,
             config: {
@@ -210,15 +231,14 @@ export const generateFlyerImage = async (prompt: string): Promise<string> => {
                 aspectRatio: '3:4', // Aspect ratio based on the new design
             },
         });
-
-        if (response.generatedImages && response.generatedImages.length > 0) {
-            return response.generatedImages[0].image.imageBytes;
-        } else {
-            throw new Error("La API no generó ninguna imagen.");
-        }
-
     } catch (error) {
         console.error('Error calling Imagen API:', error);
         throw new Error('Failed to generate flyer from AI service.');
+    }
+
+    if (response && response.generatedImages && response.generatedImages.length > 0) {
+        return response.generatedImages[0].image.imageBytes;
+    } else {
+        throw new Error("La API no generó ninguna imagen.");
     }
 };
