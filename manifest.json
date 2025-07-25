@@ -1,0 +1,18 @@
+
+{
+  "short_name": "Lidermap",
+  "name": "Lidermap de Método PENIEL",
+  "description": "Una aplicación móvil para medir y analizar el estilo de liderazgo de los usuarios a través de un cuestionario diagnóstico, proporcionando resultados personalizados y planes de mejora impulsados por IA.",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIwIiBmaWxsPSIjMmUzNjhmIi8+PHRleHQgeD0iNTAiIHk9IjY4IiBmb250LWZhbWlseT0iUG9wcGlucywgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI1NSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5MPC90ZXh0Pjwvc3ZnPg==",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#00a9d3",
+  "background_color": "#ffffff",
+  "scope": "/"
+}
